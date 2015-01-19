@@ -107,24 +107,23 @@ int main(int argc, char** argv)
             return 0; 
         }
 
-      if (args.ReadBool("params"))
-	{ 
-	  string outputDir = args.ReadWithDefault("output",".");
-	  EasyLog::StartLog(outputDir,false); 
-	  ofstream paramFile(( EasyLog::GetOutputDirectory() + "/paramnames.txt").c_str());
-	  vector<string> paramNames;
-	  FwdModel* model;
-	  model = FwdModel::NewFromName(args.Read("model"),args);
-	  model->NameParams(paramNames);
-	  for (unsigned i = 0; i < paramNames.size(); i++)
-	    {
-	      LOG << "      " << paramNames[i] << endl;
-	      paramFile << paramNames[i] << endl;
-	    }
-	  paramFile.close();
+      if (args.ReadBool("params")) { 
+        string outputDir = args.ReadWithDefault("output",".");
+        EasyLog::StartLog(outputDir,false); 
+        ofstream paramFile(( EasyLog::GetOutputDirectory() + "/paramnames.txt").c_str());
+        vector<string> paramNames;
+        FwdModel* model;
+        model = FwdModel::NewFromName(args.Read("model"),args);
+        model->NameParams(paramNames);
+        for (unsigned i = 0; i < paramNames.size(); i++)
+        {
+          LOG << "      " << paramNames[i] << endl;
+          paramFile << paramNames[i] << endl;
+        }
+        paramFile.close();
 
-	  return 0;
-	}
+        return 0;
+      }
 
       EasyLog::StartLog(
         args.Read("output", "Must specify an output directory, for example: --output=mytestrun"),

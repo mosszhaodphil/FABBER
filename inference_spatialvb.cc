@@ -156,18 +156,18 @@ void SpatialVariationalBayes::Setup(ArgsType& args)
       // keepInterparameterCovariances = true; // hacky
       useSimultaneousEvidenceOptimization = args.ReadBool("slow-eo");
       if (!useSimultaneousEvidenceOptimization)
-	Warning::IssueOnce("Defaulting to Full (non-simultaneous) Evidence Optimization");
+        Warning::IssueOnce("Defaulting to Full (non-simultaneous) Evidence Optimization");
     }
 
   if (spatialPriorsTypes.find("F") != string::npos) // F found
     {
       if (fixedDelta < 0)
-	throw Invalid_option("If --param-spatial-priors=F, you must specify a --fixed-delta value.\n");
+        throw Invalid_option("If --param-spatial-priors=F, you must specify a --fixed-delta value.\n");
     }
   else
     {
       if (fixedDelta == -1)
-	fixedDelta = 0.5; // Default initial value (in mm!)
+        fixedDelta = 0.5; // Default initial value (in mm!)
     }
 
   //get file names for I priors
@@ -179,29 +179,29 @@ void SpatialVariationalBayes::Setup(ArgsType& args)
   }
 
 // deal with the spatial prior string, expand the '+' if it has been used
-const int Nparams = model->NumParams();
-const string::size_type thePlus = spatialPriorsTypes.find_first_of("+",1);
-if (thePlus != string::npos)
-{
-assert(spatialPriorsTypes.find_last_of("+") == thePlus);
-string before(spatialPriorsTypes, 0, thePlus-1);
-string after(spatialPriorsTypes, thePlus+1, Nparams);
-char repeatme = spatialPriorsTypes[thePlus-1];
+  const int Nparams = model->NumParams();
+  const string::size_type thePlus = spatialPriorsTypes.find_first_of("+",1);
+  if (thePlus != string::npos)
+  {
+    assert(spatialPriorsTypes.find_last_of("+") == thePlus);
+    string before(spatialPriorsTypes, 0, thePlus-1);
+    string after(spatialPriorsTypes, thePlus+1, Nparams);
+    char repeatme = spatialPriorsTypes[thePlus-1];
 //cout << "before == " << before << "\nafter == " << after
 //   << "\nrepeatme == " << repeatme << "\nthePlus == " << thePlus
 //   << endl;
-spatialPriorsTypes = before;
-for (int k = before.length()+after.length(); k < Nparams; k++)
-  {spatialPriorsTypes += repeatme;   }
-spatialPriorsTypes += after;
+    spatialPriorsTypes = before;
+    for (int k = before.length()+after.length(); k < Nparams; k++)
+      {spatialPriorsTypes += repeatme;   }
+    spatialPriorsTypes += after;
 
 
 // deal with the shifting of image prior file names from expanding the +
- int nins = Nparams-before.length()-after.length()-2; // -2 accoutns for the letter and + in the original string
+  int nins = Nparams-before.length()-after.length()-2; // -2 accoutns for the letter and + in the original string
   for (unsigned int k = Nparams; k> (Nparams-after.length()) ; k--)
    {
      imagepriorstr[k-1] = imagepriorstr[k-1-nins];
-     if (nins>0) imagepriorstr[k-1-nins] = ""; //clear old entry
+     if (nins>0)  imagepriorstr[k-1-nins] = ""; //clear old entry
    }
  }
 
@@ -252,27 +252,27 @@ spatialPriorsTypes += after;
 
 
 // finally check that there are the right number of spatial priors specified and write full expanded string to the log
-if ((int)spatialPriorsTypes.length() != Nparams)// && !useShrinkageMethod)
-{
-throw Invalid_option("--param-spatial-priors=" + spatialPriorsTypes 
+  if ((int)spatialPriorsTypes.length() != Nparams)// && !useShrinkageMethod
+    {
+      throw Invalid_option("--param-spatial-priors=" + spatialPriorsTypes 
 		   + ", but there are " + stringify(Nparams)
 		   + " parameters!\n");
-}
-else
-{
-LOG_ERR("Expanded, --param-spatial-priors=" 
+    }
+  else
+  {
+    LOG_ERR("Expanded, --param-spatial-priors=" 
       << spatialPriorsTypes << endl);
-}
+  }
 
 }
 
 void SpatialVariationalBayes::DoCalculations(const DataSet& allData)
 {
-Tracer_Plus tr("SpatialVariationalBayes::DoCalculations");
-const Matrix& data = allData.GetVoxelData();
-const Matrix & coords = allData.GetVoxelCoords();
-const Matrix & suppdata = allData.GetVoxelSuppData();
-const int Nvoxels = data.Ncols();
+  Tracer_Plus tr("SpatialVariationalBayes::DoCalculations");
+  const Matrix& data = allData.GetVoxelData();
+  const Matrix & coords = allData.GetVoxelCoords();
+  const Matrix & suppdata = allData.GetVoxelSuppData();
+  const int Nvoxels = data.Ncols();
 // Rows are volumes
 // Columns are (time) series
 // num Rows is size of (time) series
@@ -289,59 +289,59 @@ const int Nvoxels = data.Ncols();
   model->pass_in_coords(coords.Column(1));
 
 
-const int Nparams = model->NumParams();
+  const int Nparams = model->NumParams();
 
 // Added to diagonal to make sure the spatial precision matrix
 // doesn't become singular -- and isolated voxels behave sensibly. 
-const double tiny = 0; // turns out to be no longer necessary.
+  const double tiny = 0; // turns out to be no longer necessary.
 
 // Sanity checks:
 
-if (data.Nrows() != model->NumOutputs())
-throw Invalid_option("Data length (" 
-+ stringify(data.Nrows())
-+ ") does not match model's output length ("
-+ stringify(model->NumOutputs())
-+ ")!");
+  if (data.Nrows() != model->NumOutputs())
+    throw Invalid_option("Data length (" 
+    + stringify(data.Nrows())
+    + ") does not match model's output length ("
+    + stringify(model->NumOutputs())
+    + ")!");
 
-assert(resultMVNs.empty()); // Only call DoCalculations once
-assert(resultMVNsWithoutPrior.empty());;
-assert(resultFs.empty());
+  assert(resultMVNs.empty()); // Only call DoCalculations once
+  assert(resultMVNsWithoutPrior.empty());;
+  assert(resultFs.empty());
 
 // Initialization:
 
 // Make the neighbours[] lists if required
-if (spatialPriorsTypes.find_first_of("mMpPSZ") != string::npos)
-{
-#ifndef __FABBER_LIBRARYONLY
-	if (allData.GetMask().nvoxels()>0)
-  	    CalcNeighbours(allData.GetMask());
-	else 
-#endif // __FABBER_LIBRARYONLY
-	    CalcNeighbours(allData.GetVoxelCoords());
-}
+  if (spatialPriorsTypes.find_first_of("mMpPSZ") != string::npos)
+  {
+  #ifndef __FABBER_LIBRARYONLY
+  	if (allData.GetMask().nvoxels()>0)
+    	    CalcNeighbours(allData.GetMask());
+  	else 
+  #endif // __FABBER_LIBRARYONLY
+  	    CalcNeighbours(allData.GetVoxelCoords());
+  }
 
-// Make distance matrix if required
-if (spatialPriorsTypes.find_first_of("RDF") != string::npos)
-{
-#ifndef __FABBER_LIBRARYONLY
-	if (allData.GetMask().nvoxels()>0)
-  	    covar.CalcDistances(allData.GetMask(), distanceMeasure);
-	else
-#endif //__FABBER_LIBRARYONLY
-	    covar.CalcDistances(allData.GetVoxelCoords(), distanceMeasure); // Note: really ought to know the voxel dimensions and multiply by those, because CalcDistances expects an input in mm, not index.
-}
+  // Make distance matrix if required
+  if (spatialPriorsTypes.find_first_of("RDF") != string::npos)
+  {
+  #ifndef __FABBER_LIBRARYONLY
+  	if (allData.GetMask().nvoxels()>0)
+    	    covar.CalcDistances(allData.GetMask(), distanceMeasure);
+  	else
+  #endif //__FABBER_LIBRARYONLY
+  	    covar.CalcDistances(allData.GetVoxelCoords(), distanceMeasure); // Note: really ought to know the voxel dimensions and multiply by those, because CalcDistances expects an input in mm, not index.
+  }
 
 // If we haven'd done this, then covar is invalid and it'll return a 
 // zero-size matrix for GetC, etc!
 
 // Make each voxel's distributions
 
-vector<NoiseParams*> noiseVox; // these change
-vector<NoiseParams*> noiseVoxPrior; // these may change in future
-vector<MVNDist> fwdPriorVox;
-vector<MVNDist> fwdPosteriorVox;
-vector<LinearizedFwdModel> linearVox;
+  vector<NoiseParams*> noiseVox; // these change
+  vector<NoiseParams*> noiseVoxPrior; // these may change in future
+  vector<MVNDist> fwdPriorVox;
+  vector<MVNDist> fwdPosteriorVox;
+  vector<LinearizedFwdModel> linearVox;
 
  bool alsoSaveWithoutPrior = useEvidenceOptimization; // or other reasons?
  bool alsoSaveSpatialPriors = false;
